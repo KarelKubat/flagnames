@@ -30,16 +30,17 @@ func main() {
 This allows for the following invocations:
 
 - `myprog -verbose -id=1 -item=2 -prefix=myprefix`: what you'd expect
-- `myprog -v -p=myprefix`: -verbose and -prefix can be abbreviated to their shortest form
+- `myprog --verbose --id=1 --item=2 --prefix=myprefix`: same, but with `--`
+- `myprog -v -p=myprefix`: -verbose and -prefix can be abbreviated to their shortest form (`--` also works)
 - `myprog -id=1 -it=2`: the shortest form of `id` and `item` is 2 characters
 
 When `flagnames` can't resolve shortened flags to their longer form, then nothing happens - and `flag.Parse()` will fail:
 
-- `myprog -i 1`: will show the abbreviated usage information and stop
+- `myprog -i 1`: will print that flag `-i` is given but not defined (`-i` could mean `-id` or `-item`, and `flagnames` can't resolve it)
 
 The standard flag `-help` is also automatically handled:
 
-- `myprog -h` (or -he, -hel, -help): will call `flag`s `Usage()` function, like with `myprogh -help`
+- `myprog -h` (or -he, -hel, -help): will call the usual `flag.Usage()` function, like with `myprog -help`
 
 The order of actions is important:
 1. First the flags need to be defined

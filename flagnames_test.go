@@ -46,8 +46,28 @@ func TestPatchFlagSet(t *testing.T) {
 			wantNArg:    3,
 		},
 		{
+			// With --
+			args:        []string{"myprog", "--v", "--p=myprefix", "a", "b", "c"},
+			wantError:   false,
+			wantVerbose: true,
+			wantId:      0,
+			wantItem:    0,
+			wantPrefix:  "myprefix",
+			wantNArg:    3,
+		},
+		{
 			// Same with separated flag/value
 			args:        []string{"myprog", "-v", "-p", "myprefix", "a", "b", "c"},
+			wantError:   false,
+			wantVerbose: true,
+			wantId:      0,
+			wantItem:    0,
+			wantPrefix:  "myprefix",
+			wantNArg:    3,
+		},
+		{
+			// With --
+			args:        []string{"myprog", "--v", "--p", "myprefix", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      0,
@@ -86,6 +106,16 @@ func TestPatchFlagSet(t *testing.T) {
 			wantNArg:    3,
 		},
 		{
+			// With --
+			args:        []string{"myprog", "--v", "--p=a=b=c=d", "--id", "19", "--it", "62", "a", "b", "c"},
+			wantError:   false,
+			wantVerbose: true,
+			wantId:      19,
+			wantItem:    62,
+			wantPrefix:  "a=b=c=d",
+			wantNArg:    3,
+		},
+		{
 			// Repeated flags are ok, last one is picked up (same as flag package)
 			args:        []string{"myprog", "-v", "-p=a=b=c=d", "-id", "19", "-it", "62", "-p=prefix", "a", "b", "c"},
 			wantError:   false,
@@ -96,8 +126,28 @@ func TestPatchFlagSet(t *testing.T) {
 			wantNArg:    3,
 		},
 		{
+			// With --
+			args:        []string{"myprog", "--v", "--p=a=b=c=d", "--id", "19", "--it", "62", "-p=prefix", "a", "b", "c"},
+			wantError:   false,
+			wantVerbose: true,
+			wantId:      19,
+			wantItem:    62,
+			wantPrefix:  "prefix",
+			wantNArg:    3,
+		},
+		{
 			// Ambiguous flags are not patched, flag.Parse will barf
 			args:        []string{"myprog", "-v", "-i", "19", "-it", "62", "-p=prefix", "a", "b", "c"},
+			wantError:   true,
+			wantVerbose: true,
+			wantId:      19,
+			wantItem:    62,
+			wantPrefix:  "prefix",
+			wantNArg:    3,
+		},
+		{
+			// With --
+			args:        []string{"myprog", "--v", "--i", "19", "--it", "62", "--p=prefix", "a", "b", "c"},
 			wantError:   true,
 			wantVerbose: true,
 			wantId:      19,
