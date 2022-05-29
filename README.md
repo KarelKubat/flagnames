@@ -1,6 +1,6 @@
 # flagnames
 
-Package `flagnames` is meant to be used with the standard Go package [flag](https://pkg.go.dev/flag). When long flags are defined, `flagnames` allow these to be abbreviated.
+Package `flagnames` is meant to be used with the standard Go package [flag](https://pkg.go.dev/flag). When long flags are defined, `flagnames` allow these to be abbreviated. So you get short flags as well, "for free".
 
 Example:
 
