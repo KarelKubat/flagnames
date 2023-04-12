@@ -13,6 +13,7 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	// Gather up the names of defined flags.
 	definedFlags := []string{}
 	fs.VisitAll(func(f *flag.Flag) {
+		fmt.Println("visit flag:", f.Name)
 		definedFlags = append(definedFlags, f.Name)
 	})
 	definedFlags = append(definedFlags, "help")
@@ -20,25 +21,22 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	newArgs := []string{}
 	parsingFlags := true
 
-	for _, arg := range *actualArgs {
-		// Stop examining flags once we've seen --.
-		if arg == "--" {
+	for i := 1; i < len(*actualArgs); i++ {
+		arg := (*actualArgs)[i]
+		fmt.Println("looking at:", arg, "parsing flags:", parsingFlags, "newargs:", newArgs)
+		// Stop examining flags when:
+		// - We see a solitary -- or -
+		// - We see a positional argument
+		// Add the the new args if we're already not examining flags.
+		if arg == "--" || arg == "-" || (len(arg) > 0 && arg[0] != '-') || !parsingFlags {
 			parsingFlags = false
 			newArgs = append(newArgs, arg)
 			continue
 		}
-		// Just add the arg to the new set of args if we've stopped parsing, or the arg isn't a flag.
-		if !parsingFlags || arg[0] != '-' {
-			newArgs = append(newArgs, arg)
-			continue
-		}
-		// Build up a list of possible hits. What full-length flag can this maybe abbreviated flag mean?
+		// We're at a flag. Build up a list of possible hits. What full-length flag can this maybe abbreviated flag mean?
 		parts := strings.Split(arg, "=")
 		hits := []int{}
-		givenFlag := parts[0]
-		for givenFlag[0] == '-' {
-			givenFlag = givenFlag[1:]
-		}
+		givenFlag := strings.TrimLeft(parts[0], "-")
 		for index, knownFlag := range definedFlags {
 			if strings.HasPrefix(knownFlag, givenFlag) {
 				hits = append(hits, index)
