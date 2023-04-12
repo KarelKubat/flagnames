@@ -63,12 +63,10 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 		} else {
 			newArgs = append(newArgs, arg)
 		}
-		fmt.Println("hits:", hits, "givenflag:", givenFlag, "parts:", parts, "newargs now:", newArgs)
 	}
 
 	// Reset the args to the resolved flags.
 	*actualArgs = newArgs
-	fmt.Println("final newargs:", newArgs)
 }
 
 // Patch patches the default (global) flags, witch is the flag.CommandLine.
@@ -76,6 +74,7 @@ func Patch() {
 	if len(os.Args) > 1 {
 		beyondArgs := os.Args[1:]
 		PatchFlagSet(flag.CommandLine, &beyondArgs)
-		os.Args = beyondArgs
+		os.Args = []string{os.Args[0]}
+		os.Args = append(os.Args, beyondArgs...)
 	}
 }
