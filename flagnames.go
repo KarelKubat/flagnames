@@ -10,10 +10,11 @@ import (
 
 // PatchFlagSet patches a flag.FlagSet to a known list of flags.
 func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
-	// We need at least SOME args: the program main and one other.
-	if len(*actualArgs) < 2 {
+	// Avoid parsing empty args. This should not occur irl.
+	if len(*actualArgs) == 0 {
 		return
 	}
+
 	// Gather up the names of defined flags.
 	definedFlags := []string{}
 	fs.VisitAll(func(f *flag.Flag) {
@@ -24,9 +25,12 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	newArgs := []string{}
 	parsingFlags := true
 
-	for i, arg := range *actualArgs {
-		// Skip the program name.
-		if i == 0 {
+	for _, arg := range *actualArgs {
+		// Anything that doesn't start with a hyphen can be a positional arg, or a flag value.
+		// We add it to the reworked args and continue - incase this was a flag arg and more flags
+		// follow.
+		if !strings.HasPrefix(arg, "-") {
+			newArgs = append(newArgs, arg)
 			continue
 		}
 
@@ -36,14 +40,6 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 			parsingFlags = false
 		}
 		if !parsingFlags {
-			newArgs = append(newArgs, arg)
-			continue
-		}
-
-		// Anything that doesn't start with a hyphen can be a positional arg, or a flag value.
-		// We add it to the reworked args and continue - incase this was a flag arg and more flags
-		// follow.
-		if !strings.HasPrefix(arg, "-") {
 			newArgs = append(newArgs, arg)
 			continue
 		}
@@ -59,21 +55,27 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 		}
 		// If we have exactly one match for the given flag, then modify it. Else use whatever was there.
 		if len(hits) == 1 {
-			newParts := []string{fmt.Sprintf("-%v", definedFlags[hits[0]])}
-			for _, p := range parts[1:] {
-				newParts = append(newParts, p)
+			newFlag := fmt.Sprintf("--%v", definedFlags[hits[0]])
+			if len(parts) > 1 {
+				newFlag += fmt.Sprintf("=%v", parts[1])
 			}
-			newArgs = append(newArgs, strings.Join(newParts, "="))
+			newArgs = append(newArgs, newFlag)
 		} else {
 			newArgs = append(newArgs, arg)
 		}
+		fmt.Println("hits:", hits, "givenflag:", givenFlag, "parts:", parts, "newargs now:", newArgs)
 	}
 
 	// Reset the args to the resolved flags.
 	*actualArgs = newArgs
+	fmt.Println("final newargs:", newArgs)
 }
 
 // Patch patches the default (global) flags, witch is the flag.CommandLine.
 func Patch() {
-	PatchFlagSet(flag.CommandLine, &os.Args)
+	if len(os.Args) > 1 {
+		beyondArgs := os.Args[1:]
+		PatchFlagSet(flag.CommandLine, &beyondArgs)
+		os.Args = beyondArgs
+	}
 }

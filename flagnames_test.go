@@ -2,6 +2,7 @@ package flagnames
 
 import (
 	"flag"
+	"fmt"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ func TestPatchFlagSet(t *testing.T) {
 	}{
 		{
 			// No flags, no action
-			args:        []string{"myprog"},
+			args:        []string{},
 			wantError:   false,
 			wantVerbose: false,
 			wantId:      0,
@@ -27,7 +28,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// Just 3 args
-			args:        []string{"myprog", "a", "b", "c"},
+			args:        []string{"a", "b", "c"},
 			wantError:   false,
 			wantVerbose: false,
 			wantId:      0,
@@ -37,7 +38,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// -v --> -verbose, -p=myprefix --> -prefix
-			args:        []string{"myprog", "-v", "-p=myprefix", "a", "b", "c"},
+			args:        []string{"-v", "-p=myprefix", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      0,
@@ -47,7 +48,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// With --
-			args:        []string{"myprog", "--v", "--p=myprefix", "a", "b", "c"},
+			args:        []string{"--v", "--p=myprefix", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      0,
@@ -57,7 +58,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// Same with separated flag/value
-			args:        []string{"myprog", "-v", "-p", "myprefix", "a", "b", "c"},
+			args:        []string{"-v", "-p", "myprefix", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      0,
@@ -67,7 +68,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// With --
-			args:        []string{"myprog", "--v", "--p", "myprefix", "a", "b", "c"},
+			args:        []string{"--v", "--p", "myprefix", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      0,
@@ -77,7 +78,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// -id and -it are not ambiguous
-			args:        []string{"myprog", "-v", "-p", "myprefix", "-id=19", "-it=62", "a", "b", "c"},
+			args:        []string{"-v", "-p", "myprefix", "-id=19", "-it=62", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      19,
@@ -87,7 +88,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// Same with separate flag/value for the int flags
-			args:        []string{"myprog", "-v", "-p=myprefix", "-id", "19", "-it", "62", "a", "b", "c"},
+			args:        []string{"-v", "-p=myprefix", "-id", "19", "-it", "62", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      19,
@@ -97,7 +98,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// Value with = doesn't get clobbered
-			args:        []string{"myprog", "-v", "-p=a=b=c=d", "-id", "19", "-it", "62", "a", "b", "c"},
+			args:        []string{"-v", "-p=a=b=c=d", "-id", "19", "-it", "62", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      19,
@@ -107,7 +108,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// With --
-			args:        []string{"myprog", "--v", "--p=a=b=c=d", "--id", "19", "--it", "62", "a", "b", "c"},
+			args:        []string{"--v", "--p=a=b=c=d", "--id", "19", "--it", "62", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      19,
@@ -117,7 +118,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// Repeated flags are ok, last one is picked up (same as flag package)
-			args:        []string{"myprog", "-v", "-p=a=b=c=d", "-id", "19", "-it", "62", "-p=prefix", "a", "b", "c"},
+			args:        []string{"-v", "-p=a=b=c=d", "-id", "19", "-it", "62", "-p=prefix", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      19,
@@ -127,7 +128,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// With --
-			args:        []string{"myprog", "--v", "--p=a=b=c=d", "--id", "19", "--it", "62", "-p=prefix", "a", "b", "c"},
+			args:        []string{"--v", "--p=a=b=c=d", "--id", "19", "--it", "62", "-p=prefix", "a", "b", "c"},
 			wantError:   false,
 			wantVerbose: true,
 			wantId:      19,
@@ -137,7 +138,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// Ambiguous flags are not patched, flag.Parse will barf
-			args:        []string{"myprog", "-v", "-i", "19", "-it", "62", "-p=prefix", "a", "b", "c"},
+			args:        []string{"-v", "-i", "19", "-it", "62", "-p=prefix", "a", "b", "c"},
 			wantError:   true,
 			wantVerbose: true,
 			wantId:      19,
@@ -147,7 +148,7 @@ func TestPatchFlagSet(t *testing.T) {
 		},
 		{
 			// With --
-			args:        []string{"myprog", "--v", "--i", "19", "--it", "62", "--p=prefix", "a", "b", "c"},
+			args:        []string{"--v", "--i", "19", "--it", "62", "--p=prefix", "a", "b", "c"},
 			wantError:   true,
 			wantVerbose: true,
 			wantId:      19,
@@ -169,31 +170,32 @@ func TestPatchFlagSet(t *testing.T) {
 		fs.StringVar(&prefix, "prefix", "", "report prefix")
 
 		// Patch up short flags into the known flags and parse.
+		originalArgs := fmt.Sprintf("%v", test.args)
 		PatchFlagSet(fs, &test.args)
 		err := fs.Parse(test.args)
 		gotError := err != nil
 
 		if gotError != test.wantError {
-			t.Errorf("parseSubCmdFlags(%v) = %q, gotError=%v, wantError=%v", test.args, err.Error(), gotError, test.wantError)
+			t.Errorf("parseSubCmdFlags(%v) = %q, gotError=%v, wantError=%v", originalArgs, err.Error(), gotError, test.wantError)
 			continue
 		}
 		if gotError {
 			continue
 		}
 		if verbose != test.wantVerbose {
-			t.Errorf("parseSubCmdFlags(%v): verbose=%v, want %v", test.args, verbose, test.wantVerbose)
+			t.Errorf("parseSubCmdFlags(%v): verbose=%v, want %v", originalArgs, verbose, test.wantVerbose)
 		}
 		if id != test.wantId {
-			t.Errorf("parseSubCmdFlags(%v): id=%v, want %v", test.args, id, test.wantId)
+			t.Errorf("parseSubCmdFlags(%v): id=%v, want %v", originalArgs, id, test.wantId)
 		}
 		if item != test.wantItem {
-			t.Errorf("parseSubCmdFlags(%v): item=%v, want %v", test.args, item, test.wantItem)
+			t.Errorf("parseSubCmdFlags(%v): item=%v, want %v", originalArgs, item, test.wantItem)
 		}
 		if prefix != test.wantPrefix {
-			t.Errorf("parseSubCmdFlags(%v): prefix=%v, want %v", test.args, prefix, test.wantPrefix)
+			t.Errorf("parseSubCmdFlags(%v): prefix=%v, want %v", originalArgs, prefix, test.wantPrefix)
 		}
 		if fs.NArg() != test.wantNArg {
-			t.Errorf("parseSubCmdFlags(%v): NArg=%v, want %v", test.args, fs.NArg(), test.wantNArg)
+			t.Errorf("parseSubCmdFlags(%v): NArg=%v, want %v", originalArgs, fs.NArg(), test.wantNArg)
 		}
 	}
 }
