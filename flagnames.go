@@ -30,14 +30,20 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 			continue
 		}
 
-		// Stop examining flags when:
-		// - We see a solitary -- or -
-		// - We see a positional argument
+		// Stop examining flags when we see a solitary -- or -.
 		// Add the the new args if we're already not examining flags.
 		if arg == "--" || arg == "-" {
 			parsingFlags = false
 		}
 		if !parsingFlags {
+			newArgs = append(newArgs, arg)
+			continue
+		}
+
+		// Anything that doesn't start with a hyphen can be a positional arg, or a flag value.
+		// We add it to the reworked args and continue - incase this was a flag arg and more flags
+		// follow.
+		if !strings.HasPrefix(arg, "-") {
 			newArgs = append(newArgs, arg)
 			continue
 		}
