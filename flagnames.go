@@ -10,6 +10,10 @@ import (
 
 // PatchFlagSet patches a flag.FlagSet to a known list of flags.
 func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
+	// We need at least SOME args: the program main and one other.
+	if len(*actualArgs) < 2 {
+		return
+	}
 	// Gather up the names of defined flags.
 	definedFlags := []string{}
 	fs.VisitAll(func(f *flag.Flag) {
@@ -20,8 +24,12 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	newArgs := []string{}
 	parsingFlags := true
 
-	for i := 1; i < len(*actualArgs); i++ {
-		arg := (*actualArgs)[i]
+	for i, arg := range *actualArgs {
+		// Skip the program name.
+		if i == 0 {
+			continue
+		}
+
 		// Stop examining flags when:
 		// - We see a solitary -- or -
 		// - We see a positional argument
@@ -33,8 +41,9 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 			newArgs = append(newArgs, arg)
 			continue
 		}
+
 		// We're at a flag. Build up a list of possible hits. What full-length flag can this maybe abbreviated flag mean?
-		parts := strings.Split(arg, "=")
+		parts := strings.SplitN(arg, "=", 2)
 		hits := []int{}
 		givenFlag := strings.TrimLeft(parts[0], "-")
 		for index, knownFlag := range definedFlags {
@@ -55,6 +64,7 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	}
 
 	// Reset the args to the resolved flags.
+	fmt.Println("newArgs:", newArgs)
 	*actualArgs = newArgs
 }
 
