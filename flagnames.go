@@ -13,7 +13,6 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	// Gather up the names of defined flags.
 	definedFlags := []string{}
 	fs.VisitAll(func(f *flag.Flag) {
-		fmt.Println("visit flag:", f.Name)
 		definedFlags = append(definedFlags, f.Name)
 	})
 	definedFlags = append(definedFlags, "help")
@@ -23,13 +22,14 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 
 	for i := 1; i < len(*actualArgs); i++ {
 		arg := (*actualArgs)[i]
-		fmt.Println("looking at:", arg, "parsing flags:", parsingFlags, "newargs:", newArgs)
 		// Stop examining flags when:
 		// - We see a solitary -- or -
 		// - We see a positional argument
 		// Add the the new args if we're already not examining flags.
-		if arg == "--" || arg == "-" || (len(arg) > 0 && arg[0] != '-') || !parsingFlags {
+		if arg == "--" || arg == "-" {
 			parsingFlags = false
+		}
+		if !parsingFlags {
 			newArgs = append(newArgs, arg)
 			continue
 		}

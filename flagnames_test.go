@@ -170,11 +170,11 @@ func TestPatchFlagSet(t *testing.T) {
 
 		// Patch up short flags into the known flags and parse.
 		PatchFlagSet(fs, &test.args)
-		err := fs.Parse(test.args[1:])
+		err := fs.Parse(test.args)
 		gotError := err != nil
 
 		if gotError != test.wantError {
-			t.Errorf("parseSubCmdFlags(%v): gotError=%v, wantError=%v", test.args, gotError, test.wantError)
+			t.Errorf("parseSubCmdFlags(%v) = %q, gotError=%v, wantError=%v", test.args, err.Error(), gotError, test.wantError)
 			continue
 		}
 		if gotError {
