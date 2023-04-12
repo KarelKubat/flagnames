@@ -64,7 +64,6 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	}
 
 	// Reset the args to the resolved flags.
-	fmt.Println("newArgs:", newArgs)
 	*actualArgs = newArgs
 }
 
