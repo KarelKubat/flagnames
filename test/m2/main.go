@@ -44,5 +44,9 @@ func parseSubCmdFlags(args []string) error {
 	fmt.Println("item    =", itemFlag)
 	fmt.Println("prefix  =", prefixFlag)
 
+	for _, arg := range fs.Args() {
+		fmt.Println("positional argument:", arg)
+	}
+
 	return nil
 }
