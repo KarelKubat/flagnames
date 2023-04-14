@@ -76,6 +76,11 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 				dbg("candidate for %q: %q, is that a bool flag: %v", givenFlag, name, definedFlags[name])
 			}
 		}
+		if len(longCandidates) == 0 {
+			dbg("there is no candidate for %q, taking as-is and stopping further parsing", arg)
+			newArgs = append(newArgs, arg)
+			continue
+		}
 		isBoolFlag := definedFlags[longCandidates[0]]
 
 		// If we more than 1 candidate for this short flag, then leave it as-is. `flag.Parse()` will complain.
