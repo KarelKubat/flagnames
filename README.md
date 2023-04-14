@@ -133,6 +133,7 @@ func parseSubCmdFlags(args []string) error {
 	fs.StringVar(&prefixFlag, "prefix", "", "report prefix")
 
 	// Patch up short flags into the known flags and parse.
+	flagnames.Debug = true
 	flagnames.PatchFlagSet(fs, &args)
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -142,6 +143,10 @@ func parseSubCmdFlags(args []string) error {
 	fmt.Println("id      =", IDFlag)
 	fmt.Println("item    =", itemFlag)
 	fmt.Println("prefix  =", prefixFlag)
+
+	for _, arg := range fs.Args() {
+		fmt.Println("positional argument:", arg)
+	}
 
 	return nil
 }
