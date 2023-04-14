@@ -1,6 +1,15 @@
 # flagnames
 
-Package `flagnames` is meant to be used with the standard Go package [flag](https://pkg.go.dev/flag). When long flags are defined, `flagnames` allow these to be abbreviated. So you get short flags as well, "for free".
+<!-- toc -->
+- [What is <code>flagnames</code>](#what-is-flagnames)
+- [Synopsis for global flags](#synopsis-for-global-flags)
+- [Synopsis for flag.FlagSet usage](#synopsis-for-flagflagset-usage)
+- [Debugging](#debugging)
+<!-- /toc -->
+
+## What is `flagnames`
+
+Package `flagnames` is meant to be used with the standard Go package [flag](https://pkg.go.dev/flag). When flags with long names are defined, `flagnames` allow these to be abbreviated. So you get short flags as well, "for free". So if your code defines a flag `-verbose`, then invocations with `-v` are fine too.
 
 Example:
 
@@ -52,6 +61,7 @@ The order of actions is important:
 ## Synopsis for global flags
 
 ```go
+// file: test/m1/main.go
 package main
 
 import (
@@ -88,7 +98,6 @@ func main() {
 ## Synopsis for flag.FlagSet usage
 
 ```go
-// file: test/m2/main.go
 // file: test/m2/main.go
 package main
 
