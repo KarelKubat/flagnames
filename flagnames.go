@@ -95,28 +95,29 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 			// The flag is in the format --whatever=something, one string. No need to consume the next commandline argument.
 			dbg("given flag %q already contains the value, taking that for %q", givenFlag, newFlag)
 			newFlag += fmt.Sprintf("=%v", parts[1])
-		} else {
-			if i == len(*actualArgs)-1 {
-				dbg("there are no more args to use as a value for %q", newFlag)
-				newArgs = append(newArgs, newFlag)
-				continue
-			}
-			// The flag is in the format --whatever. Consume the next commandline argument when:
-			// - That next arg doesn't start with a hyphen AND either of:
-			// -- This is NOT a flag.BoolVar
-			// -- This is a flag.BoolVar type AND the next argument is 'true' or 'false'
-			nextArg := (*actualArgs)[i+1]
-			dbg("considering %q as value for %q", nextArg, newFlag)
-			switch {
-			case strings.HasPrefix(nextArg, "-"):
-				dbg("candidate value %q starts with a hyphen, not taking it", nextArg)
-			case isBoolFlag && nextArg != "true" && nextArg != "false":
-				dbg("candidate value %q does not fit bool flag %q", nextArg, newFlag)
-			default:
-				newFlag += fmt.Sprintf("=%v", nextArg)
-				dbg("using candidate value %q as %q", nextArg, newFlag)
-				i++
-			}
+			newArgs = append(newArgs, newFlag)
+			continue
+		}
+
+		// This was a solitary --flag and not --flag=value.
+		if i == len(*actualArgs)-1 {
+			dbg("there are no more args to use as value for %q", newFlag)
+			newArgs = append(newArgs, newFlag)
+			continue
+		}
+
+		// The flag is in the format --whatever and we have more args.
+		nextArg := (*actualArgs)[i+1]
+		dbg("considering %q as value for %q", nextArg, newFlag)
+		switch {
+		case strings.HasPrefix(nextArg, "-"):
+			dbg("candidate value %q starts with a hyphen, not taking it", nextArg)
+		case isBoolFlag && nextArg != "true" && nextArg != "false":
+			dbg("candidate value %q does not fit bool flag %q", nextArg, newFlag)
+		default:
+			newFlag += fmt.Sprintf("=%v", nextArg)
+			dbg("using candidate value %q as %q", nextArg, newFlag)
+			i++
 		}
 		newArgs = append(newArgs, newFlag)
 	}
