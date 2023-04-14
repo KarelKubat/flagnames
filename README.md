@@ -31,16 +31,18 @@ This allows for the following invocations:
 
 - `myprog -verbose -id=1 -item=2 -prefix=myprefix`: what you'd expect
 - `myprog --verbose --id=1 --item=2 --prefix=myprefix`: same, but with `--`
-- `myprog -v -p=myprefix`: -verbose and -prefix can be abbreviated to their shortest form (`--` also works)
-- `myprog -id=1 -it=2`: the shortest form of `id` and `item` is 2 characters
+- `myprog -v -p=myprefix`: `-verbose` and `-prefix` can be abbreviated to their shortest form (`--` also works)
+- `myprog -id=1 -it=2`: the shortest form of `-id` and `-item` is 2 characters, abbreviating to `-i` won't work since it's ambiguous
+- `myprog -p myprefix a b c -p`: the first `-p` is expanded to `--prefix=myprefix`, but the one beyond `a b c` is left as-is; it is a positional argument given that flags stop at `a`
+- `myprog -p myprefix -- -p`: the first `-p` is again expanded, the second one not as `--` indicates end-of-flags
 
-When `flagnames` can't resolve shortened flags to their longer form, then nothing happens - and `flag.Parse()` will fail:
+When `flagnames` can't resolve shortened flags to their longer form, then no expansion happens - and `flag.Parse()` will fail:
 
 - `myprog -i 1`: will print that flag `-i` is given but not defined (`-i` could mean `-id` or `-item`, and `flagnames` can't resolve it)
 
 The standard flag `-help` is also automatically handled:
 
-- `myprog -h` (or -he, -hel, -help): will call the usual `flag.Usage()` function, like with `myprog -help`
+- `myprog -h` (or `-he`, `-hel`, `-help`): will call the usual `flag.Usage()` function, like with the standard `myprog -help`
 
 The order of actions is important:
 1. First the flags need to be defined
@@ -87,55 +89,59 @@ func main() {
 
 ```go
 // file: test/m2/main.go
+// file: test/m2/main.go
 package main
 
 import (
-        "flag"
-        "fmt"
-        "log"
-        "os"
+	"flag"
+	"fmt"
+	"log"
+	"os"
 
-        "github.com/KarelKubat/flagnames"
+	"github.com/KarelKubat/flagnames"
 )
 
 func main() {
-        c, err := parseSubCmdFlags(os.Args)
-        if err != nil {
-                log.Fatal(err)
-        }
-        // What have we got?
-        fmt.Println("Flags:")
-        fmt.Println("  verbose =", c.verbose)
-        fmt.Println("  id =     ", c.id)
-        fmt.Println("  item =   ", c.item)
-        fmt.Println("  prefix = ", c.prefix)
-        for _, arg := range flag.Args() {
-                fmt.Println("Positional argument:", arg)
-        }
+	if err := parseSubCmdFlags(os.Args[1:]); err != nil {
+		log.Fatal(err)
+	}
 }
 
-type subCmd struct {
-        verbose bool
-        id      int
-        item    int
-        prefix  string
+func parseSubCmdFlags(args []string) error {
+	// Create a dedicated flagset and define some options for it.
+	fs := flag.NewFlagSet("myprog", flag.ContinueOnError)
+
+	var verboseFlag bool
+	fs.BoolVar(&verboseFlag, "verbose", false, "increase verbosity")
+
+	var IDFlag int
+	fs.IntVar(&IDFlag, "id", 0, "ID to process")
+
+	var itemFlag int
+	fs.IntVar(&itemFlag, "item", 0, "item number to fetch")
+
+	var prefixFlag string
+	fs.StringVar(&prefixFlag, "prefix", "", "report prefix")
+
+	// Patch up short flags into the known flags and parse.
+	flagnames.PatchFlagSet(fs, &args)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	fmt.Println("verbose =", verboseFlag)
+	fmt.Println("id      =", IDFlag)
+	fmt.Println("item    =", itemFlag)
+	fmt.Println("prefix  =", prefixFlag)
+
+	return nil
 }
 
-func parseSubCmdFlags(args []string) (*subCmd, error) {
-        cmdData := &subCmd{}
-        // Create a dedicated flagset and define some options for it.
-        fs := flag.NewFlagSet("myprog", flag.ContinueOnError)
-        fs.BoolVar(&cmdData.verbose, "verbose", false, "increase verbosity")
-        fs.IntVar(&cmdData.id, "id", 0, "ID to process")
-        fs.IntVar(&cmdData.item, "item", 0, "item number to fetch")
-        fs.StringVar(&cmdData.prefix, "prefix", "", "report prefix")
-
-        // Patch up short flags into the known flags and parse.
-        flagnames.PatchFlagSet(fs, &args)
-        if err := fs.Parse(args[1:]); err != nil {
-                return nil, err
-        }
-
-        return cmdData, nil
-}
 ```
+
+## Debugging
+
+If the `flagnames` doesn't behave the way you'd expect it to behave, then prior to calling `flagnames.Patch()`, set `flagnames.Debug = true`. That will generate debug messages, stating what's going on and why. If the behavior is a bug, then send me that list along with your invocation and what you would expect `flagnames` to do.
+
+Or better yet, fix the bug and send me a pull request :)
+

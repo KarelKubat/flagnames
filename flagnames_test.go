@@ -137,6 +137,16 @@ func TestPatchFlagSet(t *testing.T) {
 			wantNArg:    3,
 		},
 		{
+			// Flag-like args aren't consumed.
+			args:        []string{"-v", "a", "-v"},
+			wantError:   false,
+			wantVerbose: true,
+			wantId:      0,
+			wantItem:    0,
+			wantPrefix:  "",
+			wantNArg:    2,
+		},
+		{
 			// Ambiguous flags are not patched, flag.Parse will barf
 			args:        []string{"-v", "-i", "19", "-it", "62", "-p=prefix", "a", "b", "c"},
 			wantError:   true,
@@ -176,26 +186,26 @@ func TestPatchFlagSet(t *testing.T) {
 		gotError := err != nil
 
 		if gotError != test.wantError {
-			t.Errorf("parseSubCmdFlags(%v) = %q, gotError=%v, wantError=%v", originalArgs, err.Error(), gotError, test.wantError)
+			t.Errorf("parseSubCmdFlags(%v) = %q, gotError=%v, wantError=%v (modified args: %v)", originalArgs, err.Error(), gotError, test.wantError, test.args)
 			continue
 		}
 		if gotError {
 			continue
 		}
 		if verbose != test.wantVerbose {
-			t.Errorf("parseSubCmdFlags(%v): verbose=%v, want %v", originalArgs, verbose, test.wantVerbose)
+			t.Errorf("parseSubCmdFlags(%v): verbose=%v, want %v (modified args: %v)", originalArgs, verbose, test.wantVerbose, test.args)
 		}
 		if id != test.wantId {
-			t.Errorf("parseSubCmdFlags(%v): id=%v, want %v", originalArgs, id, test.wantId)
+			t.Errorf("parseSubCmdFlags(%v): id=%v, want %v (modified args: %v)", originalArgs, id, test.wantId, test.args)
 		}
 		if item != test.wantItem {
-			t.Errorf("parseSubCmdFlags(%v): item=%v, want %v", originalArgs, item, test.wantItem)
+			t.Errorf("parseSubCmdFlags(%v): item=%v, want %v (modified args: %v)", originalArgs, item, test.wantItem, test.args)
 		}
 		if prefix != test.wantPrefix {
-			t.Errorf("parseSubCmdFlags(%v): prefix=%v, want %v", originalArgs, prefix, test.wantPrefix)
+			t.Errorf("parseSubCmdFlags(%v): prefix=%v, want %v (modified args: %v)", originalArgs, prefix, test.wantPrefix, test.args)
 		}
 		if fs.NArg() != test.wantNArg {
-			t.Errorf("parseSubCmdFlags(%v): NArg=%v, want %v", originalArgs, fs.NArg(), test.wantNArg)
+			t.Errorf("parseSubCmdFlags(%v): NArg=%v, want %v (modified args: %v)", originalArgs, fs.NArg(), test.wantNArg, test.args)
 		}
 	}
 }

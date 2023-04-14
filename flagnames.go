@@ -8,64 +8,115 @@ import (
 	"strings"
 )
 
+var (
+	Debug bool
+)
+
+// dbg is for outputting what happens.
+func dbg(f string, a ...interface{}) {
+	if Debug {
+		fmt.Print("flagnames: ")
+		fmt.Printf(f, a...)
+		fmt.Println()
+	}
+}
+
 // PatchFlagSet patches a flag.FlagSet to a known list of flags.
 func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	// Avoid parsing empty args. This should not occur irl.
 	if len(*actualArgs) == 0 {
+		dbg("actual args %v are empty, nothing to do", *actualArgs)
 		return
 	}
+	dbg("patching: %v", *actualArgs)
 
-	// Gather up the names of defined flags.
-	definedFlags := []string{}
+	// Gather up the names of defined flags and ensure that "help" is defined as well.
+	// The value bool states whether that flag is a flag.BoolVar. If so, its next argument
+	// may be a 'false' or a 'true' and is candidate for consumption. If not, e.g. in the
+	// case of a flag.StringVar, its next argument can ALWAYS be consumed.
+	definedFlags := map[string]bool{
+		"help": true,
+	}
 	fs.VisitAll(func(f *flag.Flag) {
-		definedFlags = append(definedFlags, f.Name)
+		// If the default value as string is 'true' or 'false', then it's a boolean flag that may or
+		// may not be followed by its value-argument.
+		// Otherwise it's a flag that is always followed by its value-argument.
+		isBool := f.DefValue == "true" || f.DefValue == "false"
+		definedFlags[f.Name] = isBool
+		dbg("defined flag %q, is that a bool flag: %v", f.Name, isBool)
 	})
-	definedFlags = append(definedFlags, "help")
 
 	newArgs := []string{}
 	parsingFlags := true
 
-	for _, arg := range *actualArgs {
-		// Anything that doesn't start with a hyphen can be a positional arg, or a flag value.
-		// We add it to the reworked args and continue - incase this was a flag arg and more flags
-		// follow.
-		if !strings.HasPrefix(arg, "-") {
-			newArgs = append(newArgs, arg)
-			continue
-		}
+	for i := 0; i < len(*actualArgs); i++ {
+		arg := (*actualArgs)[i]
+		dbg("looking at %v %q, new list so far: %v", i, arg, newArgs)
 
-		// Stop examining flags when we see a solitary -- or -.
-		// Add the the new args if we're already not examining flags.
-		if arg == "--" || arg == "-" {
+		// Stop if we're not at a flag or if we see a solitary -- (end-of-flag marker).
+		if parsingFlags && (!strings.HasPrefix(arg, "-") || arg == "--") {
+			dbg("end of flags seen at %q, stopping flags parsing", arg)
 			parsingFlags = false
 		}
 		if !parsingFlags {
 			newArgs = append(newArgs, arg)
+			dbg("not parsing flags, taking %q as is", arg)
 			continue
 		}
 
 		// We're at a flag. Build up a list of possible hits. What full-length flag can this maybe abbreviated flag mean?
 		parts := strings.SplitN(arg, "=", 2)
-		hits := []int{}
+		longCandidates := []string{}
 		givenFlag := strings.TrimLeft(parts[0], "-")
-		for index, knownFlag := range definedFlags {
-			if strings.HasPrefix(knownFlag, givenFlag) {
-				hits = append(hits, index)
+
+		var name string
+		for name = range definedFlags {
+			if strings.HasPrefix(name, givenFlag) {
+				longCandidates = append(longCandidates, name)
+				dbg("candidate for %q: %q, is that a bool flag: %v", givenFlag, name, definedFlags[name])
 			}
 		}
-		// If we have exactly one match for the given flag, then modify it. Else use whatever was there.
-		if len(hits) == 1 {
-			newFlag := fmt.Sprintf("--%v", definedFlags[hits[0]])
-			if len(parts) > 1 {
-				newFlag += fmt.Sprintf("=%v", parts[1])
-			}
-			newArgs = append(newArgs, newFlag)
-		} else {
+		isBoolFlag := definedFlags[longCandidates[0]]
+
+		// If we more than 1 candidate for this short flag, then leave it as-is. `flag.Parse()` will complain.
+		if len(longCandidates) > 1 {
 			newArgs = append(newArgs, arg)
+			dbg("there are multiple candidates for %q, further handling not possible", name)
+			parsingFlags = false
+			continue
 		}
+		newFlag := fmt.Sprintf("--%v", longCandidates[0])
+		if len(parts) > 1 {
+			// The flag is in the format --whatever=something, one string. No need to consume the next commandline argument.
+			dbg("given flag %q already contains the value, taking that for %q", givenFlag, newFlag)
+			newFlag += fmt.Sprintf("=%v", parts[1])
+		} else {
+			if i == len(*actualArgs)-1 {
+				dbg("there are no more args to use as a value for %q", newFlag)
+				continue
+			}
+			// The flag is in the format --whatever. Consume the next commandline argument when:
+			// - That next arg doesn't start with a hyphen AND either of:
+			// -- This is NOT a flag.BoolVar
+			// -- This is a flag.BoolVar type AND the next argument is 'true' or 'false'
+			nextArg := (*actualArgs)[i+1]
+			dbg("considering %q as value for %q", nextArg, newFlag)
+			switch {
+			case strings.HasPrefix(nextArg, "-"):
+				dbg("candidate value %q starts with a hyphen, not taking it", nextArg)
+			case isBoolFlag && nextArg != "true" && nextArg != "false":
+				dbg("candidate value %q does not fit bool flag %q", nextArg, newFlag)
+			default:
+				newFlag += fmt.Sprintf("=%v", nextArg)
+				dbg("using candidate value %q as %q", nextArg, newFlag)
+				i++
+			}
+		}
+		newArgs = append(newArgs, newFlag)
 	}
 
 	// Reset the args to the resolved flags.
+	dbg("final list: %v", newArgs)
 	*actualArgs = newArgs
 }
 

@@ -16,6 +16,8 @@ var (
 )
 
 func main() {
+	// Trace what's happening.
+	flagnames.Debug = true
 	// Patch up the short flags into the known flags and parse.
 	flagnames.Patch()
 	flag.Parse()
