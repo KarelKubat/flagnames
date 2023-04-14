@@ -98,6 +98,7 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 		} else {
 			if i == len(*actualArgs)-1 {
 				dbg("there are no more args to use as a value for %q", newFlag)
+				newArgs = append(newArgs, newFlag)
 				continue
 			}
 			// The flag is in the format --whatever. Consume the next commandline argument when:
