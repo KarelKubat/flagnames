@@ -5,8 +5,9 @@ use strict;
 my ($codetag, $srcfile);
 # More supported codetag sources may be added here.
 my @sources = qw(gittag/gittag.go);
-for $srcfile (@sources) {
-    if (-f $srcfile) {
+for my $f (@sources) {
+    if (-f $f) {
+        $srcfile = $f;
         # Expect a line with `Version = "v1.0.0"`
         open(my $if, $srcfile) or die("gittag: cannot read $srcfile: $!\n");
         while (my $line = <$if>) {
@@ -22,11 +23,11 @@ for $srcfile (@sources) {
     last if ($codetag ne "");
 }
 
-die("gittag: cannot determine the code tag from $srcfile\n") if ($codetag eq "");
+die("gittag: cannot determine the code tag from @sources\n") if ($codetag eq "");
 print("gittag: codetag found in $srcfile is $codetag\n");
 # Require vNR.NR.NR
 if ($codetag !~ m{v[0-9]+\.[0-9]+\.[0-9]+}) {
-    die("gittag: $codetag must follow the format vNR.NR\n");
+    die("gittag: $codetag must follow the format vNR.NR.NR\n");
 }
 
 my $gittag;
