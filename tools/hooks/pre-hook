@@ -7,7 +7,7 @@ use File::Spec;
 
 my %checks_to_run = (
     'pre-commit' => [ qw(auxfiles gotests) ],
-    'pre-push'   => [ qw(allcommitted govets) ],
+    'pre-push'   => [ qw(allcommitted govets gittag) ],
 );
 my $orgpath = File::Spec->rel2abs(__FILE__);
 my $hook = $orgpath;
