@@ -1,4 +1,41 @@
 // Package flagnames resolves abbreviated flags to their full form, so that the flag package may understand them.
+//
+// Short example: This program can be called using the flags -v, -ve, -ver etc., all meaning -verbose.
+// Flag -item cannot be abbreviated to -i as this collides with -id; its shortest form is -it.
+// The shortest form for -prefix is -p.
+//
+//	 package main
+//
+//	 import (
+//		 "flag"
+//		 "fmt"
+//
+//		 "github.com/KarelKubat/flagnames"
+//	 )
+//	 var (
+//		  verboseFlag = flag.Bool("verbose", false, "increase verbosity")
+//		  idFlag      = flag.Int("id", 0, "ID to process")
+//		  itemFlag    = flag.Int("item", 0, "item number to fetch")
+//		  prefixFlag  = flag.String("prefix", "", "report prefix")
+//	 )
+//
+//	 func main() {
+//		  // Trace what's happening (optional).
+//		  flagnames.Debug = true
+//		  // Patch up the short flags into the known flags and parse.
+//		  flagnames.Patch()
+//		  flag.Parse()
+//
+//		  // What have we got?
+//		  fmt.Println("Flags:")
+//		  fmt.Println("  verbose =", *verboseFlag)
+//		  fmt.Println("  id =     ", *idFlag)
+//		  fmt.Println("  item =   ", *itemFlag)
+//		  fmt.Println("  prefix = ", *prefixFlag)
+//		  for _, arg := range flag.Args() {
+//	      fmt.Println("Positional argument:", arg)
+//	   }
+//	 }
 package flagnames
 
 import (
@@ -9,6 +46,7 @@ import (
 )
 
 var (
+	// Setting Debug to true shows on stdout how the module parses flags.
 	Debug bool
 )
 
@@ -127,7 +165,7 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 	*actualArgs = newArgs
 }
 
-// Patch patches the default (global) flags, witch is the flag.CommandLine.
+// Patch patches the default (global) flag set, witch is the flag.CommandLine.
 func Patch() {
 	if len(os.Args) > 1 {
 		beyondArgs := os.Args[1:]
