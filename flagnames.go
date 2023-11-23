@@ -125,6 +125,11 @@ func PatchFlagSet(fs *flag.FlagSet, actualArgs *[]string) {
 		if len(longCandidates) > 1 {
 			newArgs = append(newArgs, arg)
 			dbg("there are multiple candidates for %q, further handling not possible", name)
+			var multiple []string
+			for _, l := range longCandidates {
+				multiple = append(multiple, "-"+l)
+			}
+			fmt.Fprintf(fs.Output(), "flag parsing error: %v can mean multiple flags %v\n", arg, strings.Join(multiple, ","))
 			parsingFlags = false
 			continue
 		}
