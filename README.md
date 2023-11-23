@@ -47,14 +47,16 @@ This allows for the following invocations:
 
 When `flagnames` can't resolve shortened flags to their longer form, then no expansion happens - and `flag.Parse()` will fail:
 
-- `myprog -i 1`: will print that flag `-i` is given but not defined (`-i` could mean `-id` or `-item`, and `flagnames` can't resolve it)
+- `myprog -i 1`: will print that flag `-i` is given but not defined (`-i` could mean `-id` or `-item`, and `flagnames` can't resolve it). There will be a helpful message to the user: `flag parsing error: -i can mean multiple flags -id,-item`.
 
 The standard flag `-help` is also automatically handled:
 
 - `myprog -h` (or `-he`, `-hel`, `-help`): will call the usual `flag.Usage()` function, like with the standard `myprog -help`
 
 The order of actions is important:
+
 1. First the flags need to be defined
+1. Optionally, `flag.SetOutput()` can be called, so that `flagnames.Patch()` sends output to the correct stream.
 1. Then `flagnames.Patch()` is called (or `flagnames.PatchFlagSet()` for a specific `flag.FlagSet`)
 1. Finally `flag.Parse()` is called.
 
